@@ -61,7 +61,7 @@ public class PedidoController {
     public ResponseEntity<String> crearPedido(@RequestHeader("Authorization") String token) {
         try {
             pedidoService.confirmarPedido(token);
-            return ResponseEntity.ok("Pedido confirmado y mensaje enviado a la cola SQS.");
+            return ResponseEntity.ok("Pedido confirmado y mensaje enviado a la cola Kafka.");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

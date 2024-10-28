@@ -42,6 +42,9 @@ public class PedidoService {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private PedidoProducer pedidoProducer;
+
     public Pedido agregaProducto(String token, String productoId, int cantidad) {
         // Extraer el userId desde el token JWT
         String usuarioId = jwtService.extractUserId(token);
@@ -218,17 +221,9 @@ public class PedidoService {
         // Convertir el mensaje a JSON
         String messageBody = convertToJson(mensajeSqs);
 
-        // Crear el mensaje para SQS y enviarlo
-        /* 
-        SendMessageRequest sendMsgRequest = new SendMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMessageBody(messageBody)
-                .withDelaySeconds(5); // Retraso opcional
-
-        amazonSQS.sendMessage(sendMsgRequest);
-        */
+        // Enviar mensaje a Kafka
+        pedidoProducer.enviarMensaje("Pedido creado: " + messageBody);
     }
-
 
     // Método para convertir el objeto PedidoSqsMessage a JSON
     private String convertToJson(PedidoSQSMessageDTO mensajeSqs) {
