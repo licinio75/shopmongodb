@@ -205,7 +205,8 @@ public class PedidoService {
                             productoId,
                             producto.getNombre(),
                             cantidad,
-                            producto.getPrecio()
+                            producto.getPrecio(),
+                            cantidad*producto.getPrecio()
                     );
                 }).collect(Collectors.toList());
 

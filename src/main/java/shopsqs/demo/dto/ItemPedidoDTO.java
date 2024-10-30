@@ -14,9 +14,5 @@ public class ItemPedidoDTO {
     private String nombreProducto; // Nombre del producto
     private int cantidad; // Cantidad de productos
     private double precioUnitario; // Precio unitario del producto
-
-    // Método para calcular el precio total
-    public double getPrecioTotal() {
-        return cantidad * precioUnitario;
-    }
+    private double precioTotal; // Precio total del producto (cantidad * precioUnitario)
 }
