@@ -222,7 +222,7 @@ public class PedidoService {
         String messageBody = convertToJson(mensajeSqs);
 
         // Enviar mensaje a Kafka
-        pedidoProducer.enviarMensaje("Pedido creado: " + messageBody);
+        pedidoProducer.enviarMensaje(messageBody);
     }
 
     // Método para convertir el objeto PedidoSqsMessage a JSON
