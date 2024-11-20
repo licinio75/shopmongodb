@@ -39,7 +39,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Rutas accesibles sin autenticación
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", 
-                                 "/api/auth/login", "/api/auth/register", "/api/productos/list").permitAll()
+                                 "/api/auth/login", "/api/auth/register", "/api/productos/list", "/actuator/prometheus").permitAll()
                 // Rutas restringidas
                 .requestMatchers("/api/productos/create").hasAuthority("ROLE_ADMIN") // Solo para admin
                 .requestMatchers("/api/pedidos/agregar-producto", "/api/pedidos/carrito", "/api/pedidos/crear-pedido").authenticated() // Solo usuarios autenticados
