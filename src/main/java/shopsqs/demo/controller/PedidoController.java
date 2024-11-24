@@ -1,6 +1,7 @@
 package shopsqs.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,11 +25,14 @@ public class PedidoController {
         @ApiResponse(responseCode = "200", description = "Producto agregado al carrito."),
         @ApiResponse(responseCode = "400", description = "Error al agregar el producto.")
     })
-    public ResponseEntity<?> agregarProductoAlCarrito(@RequestHeader("Authorization") String token,
+    public ResponseEntity<?> agregarProductoAlCarrito(@CookieValue(value = "jwt", required = false) String jwtToken,
                                                        @RequestParam String productoId,
                                                        @RequestParam int cantidad) {
         try {
-            Pedido pedidoActualizado = pedidoService.agregaProducto(token, productoId, cantidad);
+            if (jwtToken == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado. Falta el token JWT.");
+            }
+            Pedido pedidoActualizado = pedidoService.agregaProducto(jwtToken, productoId, cantidad);
             return ResponseEntity.ok(pedidoActualizado);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -42,9 +46,12 @@ public class PedidoController {
         @ApiResponse(responseCode = "200", description = "Carrito obtenido con éxito."),
         @ApiResponse(responseCode = "400", description = "Error al obtener el carrito.")
     })
-    public ResponseEntity<?> obtenerCarrito(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> obtenerCarrito(@CookieValue(value = "jwt", required = false) String jwtToken) {
         try {
-            CarritoDTO carrito = pedidoService.obtenerCarritoUsuarioLogado(token);
+            if (jwtToken == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado. Falta el token JWT.");
+            }
+            CarritoDTO carrito = pedidoService.obtenerCarritoUsuarioLogado(jwtToken);
             return ResponseEntity.ok(carrito);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -58,9 +65,12 @@ public class PedidoController {
         @ApiResponse(responseCode = "200", description = "Pedido confirmado y mensaje enviado a la cola SQS."),
         @ApiResponse(responseCode = "400", description = "Error al confirmar el pedido.")
     })
-    public ResponseEntity<String> crearPedido(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> crearPedido(@CookieValue(value = "jwt", required = false) String jwtToken) {
         try {
-            pedidoService.confirmarPedido(token);
+            if (jwtToken == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado. Falta el token JWT.");
+            }
+            pedidoService.confirmarPedido(jwtToken);
             return ResponseEntity.ok("Pedido confirmado y mensaje enviado a la cola Kafka.");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

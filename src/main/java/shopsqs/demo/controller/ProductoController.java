@@ -6,13 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import shopsqs.demo.model.Producto;
 import shopsqs.demo.repository.ProductoRepository;
-
 import java.util.UUID;
 import java.io.IOException;
 import java.util.List;
@@ -36,7 +34,8 @@ public class ProductoController {
         @ApiResponse(responseCode = "200", description = "Producto creado exitosamente."),
         @ApiResponse(responseCode = "400", description = "Error al crear el producto.")
     })
-    public ResponseEntity<Producto> createProducto(
+    public ResponseEntity<?> createProducto(
+            @CookieValue(value = "jwt", required = false) String jwtToken,
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
             @RequestParam("precio") double precio,
@@ -44,6 +43,9 @@ public class ProductoController {
             @RequestParam("imagen") MultipartFile imagen) { // Cambiado a MultipartFile
 
         try {
+            if (jwtToken == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado. Falta el token JWT.");
+            }
             // Crear el producto
             Producto nuevoProducto = new Producto();
             nuevoProducto.setId(UUID.randomUUID().toString());
@@ -61,7 +63,6 @@ public class ProductoController {
         }
     }
 
-
     // Endpoint para listar todos los productos (disponible para todos los usuarios)
     @GetMapping("/list")
     @Operation(summary = "Listar productos", description = "Obtiene la lista de todos los productos disponibles.")
@@ -72,7 +73,6 @@ public class ProductoController {
     public ResponseEntity<List<Producto>> listProductos() {
         // Obtener todos los productos de MongoDB
         List<Producto> productos = productoRepository.findAll();
-
         // Retornar la lista de productos
         return ResponseEntity.ok(productos);
     }

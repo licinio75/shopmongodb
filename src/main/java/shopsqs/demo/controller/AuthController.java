@@ -1,5 +1,6 @@
 package shopsqs.demo.controller;
 
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -8,12 +9,15 @@ import shopsqs.demo.dto.RegistroDTO;
 import shopsqs.demo.model.Usuario;
 import shopsqs.demo.repository.UsuarioRepository;
 import shopsqs.demo.service.AuthService;
+
+import java.time.Duration;
 import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -37,13 +41,25 @@ public class AuthController {
     })
     public ResponseEntity<String> login(
         @Parameter(description = "Login request containing email and password", required = true)
-        @RequestBody LoginRequestDTO loginRequest) {
+        @RequestBody LoginRequestDTO loginRequest, HttpServletResponse response) {
 
         try {
             // Llama al método login del AuthService
             String token = authService.login(loginRequest);
-            // Devolver el token JWT
-            return ResponseEntity.ok(token);
+
+            // Crear una cookie HttpOnly para almacenar el token JWT
+            ResponseCookie cookie = ResponseCookie.from("jwt", token)
+                    .httpOnly(true) // Protege contra XSS
+                    .secure(false)  // Cambiar a true en producción (requiere HTTPS)
+                    .sameSite("Lax") // Protege contra CSRF
+                    .path("/")      // Disponible en todas las rutas
+                    .maxAge(Duration.ofHours(1)) // Token expira en 1 hora
+                    .build();
+
+            // Agregar la cookie a la respuesta
+            response.addHeader("Set-Cookie", cookie.toString());
+
+            return ResponseEntity.ok("Login successful");
         } catch (RuntimeException e) {
             // Devolver un error 401 si las credenciales son inválidas o el usuario no existe
             return ResponseEntity.badRequest().body("User Unauthorized.");

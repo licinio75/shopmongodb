@@ -70,8 +70,7 @@ public class JwtService {
         return bearerToken; // Retorna el token original si no tiene el prefijo
     }
 
-    public String extractUsername(String bearerToken) {
-        String token = extractToken(bearerToken); 
+    public String extractUsername(String token) {
         return Jwts.parserBuilder() // Usa parserBuilder en lugar de parser
                 .setSigningKey(key)
                 .build() // Construye el parser
@@ -80,8 +79,7 @@ public class JwtService {
                 .getSubject();
     }
 
-    public String extractUserId(String bearerToken) {
-        String token = extractToken(bearerToken); 
+    public String extractUserId(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
@@ -90,14 +88,12 @@ public class JwtService {
                 .get("userId", String.class); // Extrae el userId del token
     }
 
-    public boolean isTokenValid(String bearerToken, String username) {
-        String token = extractToken(bearerToken); // Llama al nuevo método para limpiar el prefijo
+    public boolean isTokenValid(String token, String username) {
         String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
     }
 
-    private boolean isTokenExpired(String bearerToken) {
-        String token = extractToken(bearerToken); // Llama al nuevo método para limpiar el prefijo
+    private boolean isTokenExpired(String token) {
         return Jwts.parserBuilder() // Usa parserBuilder en lugar de parser
                 .setSigningKey(key)
                 .build() // Construye el parser
@@ -107,8 +103,7 @@ public class JwtService {
                 .before(new Date());
     }
 
-    public Authentication getAuthentication(String bearerToken, UserDetails userDetails) {
-        String token = extractToken(bearerToken); // Llama al nuevo método para limpiar el prefijo
+    public Authentication getAuthentication(String token, UserDetails userDetails) {
         if (isTokenValid(token, userDetails.getUsername())) {
             return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         }
