@@ -88,6 +88,19 @@ public class JwtService {
                 .get("userId", String.class); // Extrae el userId del token
     }
 
+    public List<String> extractRoles(String token) {
+        return ((List<?>) Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("roles")).stream()
+                .map(role -> (String) role)
+                .collect(Collectors.toList());
+    }
+    
+    
+
     public boolean isTokenValid(String token, String username) {
         String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));

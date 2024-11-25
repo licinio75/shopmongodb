@@ -1,5 +1,6 @@
 package shopsqs.demo.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -9,15 +10,21 @@ import shopsqs.demo.dto.RegistroDTO;
 import shopsqs.demo.model.Usuario;
 import shopsqs.demo.repository.UsuarioRepository;
 import shopsqs.demo.service.AuthService;
+import shopsqs.demo.security.JwtService;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,11 +33,13 @@ public class AuthController {
     private final AuthService authService;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService, UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthService authService, UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.authService = authService;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
@@ -62,7 +71,7 @@ public class AuthController {
             return ResponseEntity.ok("Login successful");
         } catch (RuntimeException e) {
             // Devolver un error 401 si las credenciales son inválidas o el usuario no existe
-            return ResponseEntity.badRequest().body("User Unauthorized.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User Unauthorized.");        
         }
     }
 
@@ -97,4 +106,62 @@ public class AuthController {
 
         return ResponseEntity.ok("User successfully registered");
     }
+
+    // Obtener información del usuario autenticado
+    @GetMapping("/user")
+    @Operation(summary = "Get authenticated user", description = "Returns the authenticated user's information.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User information returned successfully."),
+        @ApiResponse(responseCode = "401", description = "User is not authenticated.")
+    })
+    public ResponseEntity<?> getUser(HttpServletRequest request) {
+        String jwtToken = null;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("jwt".equals(cookie.getName())) {
+                    jwtToken = cookie.getValue();
+                }
+            }
+        }
+
+        if (jwtToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated");
+        }
+
+        try {
+            String username = jwtService.extractUsername(jwtToken);
+            List<String> roles = jwtService.extractRoles(jwtToken); // Asegúrate de implementar este método
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("username", username);
+            response.put("roles", roles);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+        }
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout user", description = "Logs out the user by clearing the authentication token.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "User logged out successfully."),
+        @ApiResponse(responseCode = "400", description = "Logout failed.")
+    })
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        // Limpiar la cookie JWT
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false) // Cambiar a true en producción
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(0) // Expira la cookie inmediatamente
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
+    
+        return ResponseEntity.ok("Logout successful");
+    }
+    
+
 }
