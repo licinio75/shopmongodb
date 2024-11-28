@@ -14,6 +14,7 @@ import shopsqs.demo.repository.ProductoRepository;
 import java.util.UUID;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -40,7 +41,7 @@ public class ProductoController {
             @RequestParam("descripcion") String descripcion,
             @RequestParam("precio") double precio,
             @RequestParam("stock") int stock,
-            @RequestParam("imagen") MultipartFile imagen) { // Cambiado a MultipartFile
+            @RequestParam("imagen") MultipartFile imagen) { 
 
         try {
             if (jwtToken == null) {
@@ -70,10 +71,31 @@ public class ProductoController {
         @ApiResponse(responseCode = "200", description = "Lista de productos obtenida exitosamente."),
         @ApiResponse(responseCode = "400", description = "Error al obtener la lista de productos.")
     })
-    public ResponseEntity<List<Producto>> listProductos() {
+    public ResponseEntity<List<Producto>> listProductos(
+        @CookieValue(value = "jwt", required = false) String jwtToken
+        ) {
         // Obtener todos los productos de MongoDB
         List<Producto> productos = productoRepository.findAll();
         // Retornar la lista de productos
         return ResponseEntity.ok(productos);
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Obtener producto por ID", description = "Obtiene la información completa de un producto dado su identificador.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Producto obtenido exitosamente."),
+        @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
+    })
+    public ResponseEntity<Producto> getProductoById(
+            @CookieValue(value = "jwt", required = false) String jwtToken,
+            @PathVariable("id") String id) {
+        Optional<Producto> productoData = productoRepository.findById(id);
+
+        if (productoData.isPresent()) {
+            return new ResponseEntity<>(productoData.get(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+    
 }
